@@ -1,6 +1,7 @@
 #include "project.h"
 
 Total *total; //동적할당 하는 인스턴스인데 전역적으로 사용
+int total_num = 0; //디렉토리와 파일 전체 갯수 저장할 변수
 int count = 1;
 
 int fileType(const struct stat *fileInfo); //파일인지 디렉토리인지 알려주는 함수
@@ -11,8 +12,8 @@ void signalHandler(int signum);
 string commands[5];
 
 void execute();
-void ls(string str = "."); //디폴트 ls는 현재 디렉토리 출력
-void cd(){};
+void ls(string str); //디폴트 ls는 현재 디렉토리 출력
+void cd(string str);
 void mv(){};
 
 int main() {
@@ -43,28 +44,25 @@ void execute() {
                 }
             }
         }
-
         if (commands[0] == "ls" && commands[1] == "") {
-            ls();
+            ls(".");
         } else if (commands[0] == "ls" && commands[1] != "") {
             ls(commands[1]);
-        } else if (commands[0] == "cd") {
-            cd();
+        } else if (commands[0] == "cd" && commands[1] == "") {
+            cout << "Usage: cd [number]." << endl;
+        } else if (commands[0] == "cd" && commands[1] != "") {
+            cd(commands[1]);
+
         } else if (commands[0] == "mv") {
             mv();
         } else if (commands[0] == "q") {
             break;
         }
+        commands[1] = "";
     }
 }
 
 void ls(string str) {
-    int total_num = 0; //디렉토리와 파일 전체 갯수 저장할 변수
-    pid_t pid;
-    set<string> temp_dir;  //임시로 디렉토리 저장할 set
-    set<string> temp_file; //임시로 파일 저장할 set
-    int status = 0;
-
     char current_dir[MAX_PATH_LEN + 1];
     if (getcwd(current_dir, MAX_PATH_LEN) == NULL) { //현재 디렉토리 임시 저장
         perror("getcwd() error!");
@@ -74,69 +72,78 @@ void ls(string str) {
     struct stat fileInfo;
     struct passwd *userInfo;
     char cwd[MAX_PATH_LEN + 1];
+    char path[MAX_PATH_LEN + 1];
 
     DIR *dirp;
     struct dirent *dirInfo;
+    set<string> temp_dir;  //임시로 디렉토리 저장할 set
+    set<string> temp_file; //임시로 파일 저장할 set
 
-    pid = fork();
-
-    if (pid == -1) {
-        perror("fork() error!");
-        exit(-1);
-    } else if (pid == 0) {
-        dirp = opendir(str.c_str());
-        if (chdir(str.c_str()) == -1) {
-            perror("chdir() error!");
-            exit(-1);
-        }
-
-        if (getcwd(cwd, MAX_PATH_LEN) == NULL) {
-            perror("getcwd() error!");
-            exit(-1);
-        }
-        while ((dirInfo = readdir(dirp)) !=
-               NULL) { // while문 돌며 디렉토리 정보 읽는다.
-            char *name = dirInfo->d_name;
-
-            struct stat fileInfo2;
-            stat(name, &fileInfo2);
-
-            int k = fileType(&fileInfo2);
-            if (k == DIRECTORY) {
-                temp_dir.insert(name);
-            } else if (k == FILE) {
-                temp_file.insert(name);
-            }
-            ++total_num; //디렉토리, 파일 전체 몇 개인지 세는 변수
-        }
-
-        int dir_num = temp_dir.size();
-        set<string>::iterator iter;
-        iter = temp_dir.begin();
-        total = new Total[total_num];
-
-        for (int i = 0; i < dir_num; ++i) {
-            if (iter != temp_dir.end()) {
-                total[i].insert(i, *iter, DIRECTORY);
-                ++iter;
+    if (isdigit(str[0])) {
+        for (int i = 0; i < total_num; i++) {
+            int num = atoi(str.c_str());
+            if (total[i].getOrder() == num) {
+                string name = total[i].getName();
+                strcpy(path, name.c_str()); // string to char
+                break;
             }
         }
-        iter = temp_file.begin();
-        for (int i = dir_num; i < total_num; ++i) {
-            if (iter != temp_file.end()) {
-                total[i].insert(i, *iter, FILE);
-                ++iter;
-            }
-        }
-        for (int i = 0; i < total_num; ++i)
-            total[i].print();
-
-        if (chdir(current_dir) == -1) {
-            perror("chdir() to current directory!");
+        dirp = opendir(path);
+        if (chdir(path) == -1) {
+            perror("chdir() error!(1)");
             exit(-1);
         }
     } else {
-        wait(&status);
+        dirp = opendir(str.c_str());
+        if (chdir(str.c_str()) == -1) {
+            perror("chdir() error!(2)");
+            exit(-1);
+        }
+    }
+    if (getcwd(cwd, MAX_PATH_LEN) == NULL) {
+        perror("getcwd() error!");
+        exit(-1);
+    }
+    while ((dirInfo = readdir(dirp)) !=
+           NULL) { // while문 돌며 디렉토리 정보 읽는다.
+        char *name = dirInfo->d_name;
+
+        struct stat fileInfo2;
+        stat(name, &fileInfo2);
+
+        int k = fileType(&fileInfo2);
+        if (k == DIRECTORY) {
+            temp_dir.insert(name);
+        } else if (k == FILE) {
+            temp_file.insert(name);
+        }
+        ++total_num; //디렉토리, 파일 전체 몇 개인지 세는 변수
+    }
+
+    int dir_num = temp_dir.size();
+    set<string>::iterator iter;
+    iter = temp_dir.begin();
+    total = new Total[total_num];
+
+    for (int i = 0; i < dir_num; ++i) {
+        if (iter != temp_dir.end()) {
+            total[i].insert(i, *iter, DIRECTORY);
+            ++iter;
+        }
+    }
+    iter = temp_file.begin();
+    for (int i = dir_num; i < total_num; ++i) {
+        if (iter != temp_file.end()) {
+            total[i].insert(i, *iter, FILE);
+            ++iter;
+        }
+    }
+    for (int i = 0; i < total_num; ++i)
+        total[i].print();
+
+    if (chdir(current_dir) == -1) {
+        perror("chdir() to current directory!");
+        exit(-1);
     }
 }
 
@@ -153,5 +160,43 @@ void signalHandler(int signum) {
     if (signum == SIGINT) {
         delete[] total;
         exit(0);
+    }
+}
+
+void cd(string str) {
+    char cwd[MAX_PATH_LEN];
+    char dir[MAX_PATH_LEN];
+    if (getcwd(cwd, MAX_PATH_LEN) == NULL) {
+        perror("getcwd() error!");
+        exit(-1);
+    }
+    // cout << "Current directory" << cwd << endl; // before cd
+    int num = atoi(str.c_str());
+    for (int i = 0; i < total_num; i++) {
+        if (total[i].getOrder() == num) {
+            string name = total[i].getName();
+            strcpy(dir, name.c_str()); // string to char
+
+            struct stat fileInfo2;
+            stat(dir, &fileInfo2);
+            int k = fileType(&fileInfo2);
+
+            if (k == DIRECTORY) {
+                cout << "go to " << dir << endl;
+                if (chdir(dir) == -1) {
+                    perror("chdir() error!");
+                    exit(-1);
+                }
+                if (getcwd(cwd, MAX_PATH_LEN) == NULL) {
+                    perror("getcwd() error!");
+                    exit(-1);
+                }
+                cout << "Current directory : " << cwd << endl; // after cd
+            }
+
+            else {
+                cout << "error! It is not Directory!" << endl;
+            }
+        }
     }
 }
