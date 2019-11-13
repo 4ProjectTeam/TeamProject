@@ -79,7 +79,7 @@ void ls(string str) {
     set<string> temp_dir;  //임시로 디렉토리 저장할 set
     set<string> temp_file; //임시로 파일 저장할 set
 
-    if (isdigit(str[0])) {
+    if (isdigit(str[0])) { //만약 ls 뒤에 나오는게 숫자라면 total의 숫자와 맞는 것을 찾아 chdir로 디렉토리 변경
         for (int i = 0; i < total_num; i++) {
             int num = atoi(str.c_str());
             if (total[i].getOrder() == num) {
@@ -93,7 +93,7 @@ void ls(string str) {
             perror("chdir() error!(1)");
             exit(-1);
         }
-    } else {
+    } else { //ls 뒤에 나온게 숫자가 아니라면 그냥 str을 c타입으로 바꿔서 디렉토리 
         dirp = opendir(str.c_str());
         if (chdir(str.c_str()) == -1) {
             perror("chdir() error!(2)");
