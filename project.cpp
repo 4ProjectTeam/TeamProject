@@ -14,7 +14,8 @@ string commands[5];
 void execute();
 void ls(string str); //디폴트 ls는 현재 디렉토리 출력
 void cd(string str);
-void mv(){};
+void cp(const char *av1, const char *av2); // av1 경로의 파일을 av2 파일에 복사
+void mv(const char *av1, const char *av2); // av1 경로의 파일을 av2 디렉토리에 복사
 
 int main() {
     execute();
@@ -53,9 +54,35 @@ void execute() {
         } else if (commands[0] == "cd" && commands[1] != "") {
             cd(commands[1]);
 
-        } else if (commands[0] == "mv") {
-            mv();
-        } else if (commands[0] == "q") {
+        } else if (commands[0] == "cp" && commands[1] != "" &&
+                   commands[2] != "") {
+            string sub1 = commands[1]; //첫 번째 입력 파일
+            string sub2 = commands[2]; //두 번째 입력 파일
+            if (atoi(sub1.c_str()) == 0 && atoi(sub2.c_str()) == 0) { //반환값이 0이면 단순 문자열
+                const char *av1 = sub1.c_str(); //경로 지정
+                const char *av2 = sub2.c_str();
+                cp(av1, av2);
+            } else if (atoi(sub1.c_str()) != 0 && atoi(sub2.c_str()) != 0) { //반환값이 0이 아니면 정수를 포함한 문자열
+                string sub3 = total[atoi(sub1.c_str())].getName(); //번호에 대한 파일 경로 받아오기
+                string sub4 = total[atoi(sub2.c_str())].getName();
+                const char *av1 = sub3.c_str(); //경로 지정
+                const char *av2 = sub4.c_str();
+                cp(av1, av2);
+            }
+        } else if (commands[0] == "mv" && commands[1] != "" &&
+                   commands[2] != "") {정
+            string sub1 = commands[1];
+            string sub2 = commands[2];
+            if (atoi(sub1.c_str()) != 0 && atoi(sub2.c_str()) != 0) {
+                string sub3 = total[atoi(sub1.c_str())].getName();기
+                string sub4 = total[atoi(sub2.c_str())].getName();
+                if (total[atoi(sub2.c_str())].getDet() == DIRECTORY) {
+                    const char *av1 = sub3.c_str();
+                    const char *av2 = sub4.c_str();
+                    mv(av1, av2);
+                }
+            }
+        } else if (commands[0] == "q" || commands[0] == "Q") {
             break;
         }
         commands[1] = "";
@@ -79,7 +106,8 @@ void ls(string str) {
     set<string> temp_dir;  //임시로 디렉토리 저장할 set
     set<string> temp_file; //임시로 파일 저장할 set
 
-    if (isdigit(str[0])) { //만약 ls 뒤에 나오는게 숫자라면 total의 숫자와 맞는 것을 찾아 chdir로 디렉토리 변경
+    if (isdigit(str[0])) { //만약 ls 뒤에 나오는게 숫자라면 total의 숫자와 맞는
+                           //것을 찾아 chdir로 디렉토리 변경
         for (int i = 0; i < total_num; i++) {
             int num = atoi(str.c_str());
             if (total[i].getOrder() == num) {
@@ -93,7 +121,8 @@ void ls(string str) {
             perror("chdir() error!(1)");
             exit(-1);
         }
-    } else { //ls 뒤에 나온게 숫자가 아니라면 그냥 str을 c타입으로 바꿔서 디렉토리 
+    } else { // ls 뒤에 나온게 숫자가 아니라면 그냥 str을 c타입으로 바꿔서
+             // 디렉토리
         dirp = opendir(str.c_str());
         if (chdir(str.c_str()) == -1) {
             perror("chdir() error!(2)");
@@ -114,7 +143,7 @@ void ls(string str) {
         int k = fileType(&fileInfo2);
         if (k == DIRECTORY) {
             temp_dir.insert(name);
-        } else if (k == FILE) {
+        } else if (k == FILENUM) {
             temp_file.insert(name);
         }
         ++total_num; //디렉토리, 파일 전체 몇 개인지 세는 변수
@@ -134,7 +163,7 @@ void ls(string str) {
     iter = temp_file.begin();
     for (int i = dir_num; i < total_num; ++i) {
         if (iter != temp_file.end()) {
-            total[i].insert(i, *iter, FILE);
+            total[i].insert(i, *iter, FILENUM);
             ++iter;
         }
     }
@@ -146,13 +175,41 @@ void ls(string str) {
         exit(-1);
     }
 }
+void cp(const char *av1, const char *av2) {
+    FILE *src;
+    FILE *dst;
+    char ch;
 
+    // 복사할 파일을 연다.
+    if ((src = fopen(av1, "r")) == NULL) {
+        fprintf(stderr, "%s: Can't open file.\n", av1);
+        return;
+    }
+
+    // 쓰기할 파일을 연다.
+    if ((dst = fopen(av2, "w")) == NULL) {
+        fprintf(stderr, "%s: Can't open file.\n", av2);
+        return;
+    }
+
+    // 복사
+    while (!feof(src)) {
+        ch = (char)fgetc(src);
+
+        if (ch != EOF) {
+            fputc((int)ch, dst);
+        }
+    }
+
+    fclose(src); //닫기
+    fclose(dst);
+}
 //파일인지 디렉토리인지 구분하는 함수
 int fileType(const struct stat *fileInfo) {
     if (S_ISDIR(fileInfo->st_mode)) { //디렉토리이면 DIRECTORY 리턴
         return DIRECTORY;
     } else { //아닐 경우 FILE 리턴
-        return FILE;
+        return FILENUM;
     }
 }
 
@@ -162,7 +219,46 @@ void signalHandler(int signum) {
         exit(0);
     }
 }
+void mv(const char *av1, const char *av2) {
+    FILE *src;
+    FILE *dst;
+    char ch;
+    char cwd[MAX_PATH_LEN]; //현재 위치 경로
+    if (getcwd(cwd, MAX_PATH_LEN) == NULL) {
+        perror("getcwd() error!");
+        exit(-1);
+    }
+    string sub = commands[1]; // 복사된 파일의 이름도 복사한 파일의 이름과 같게 설정
+    string sub2 = total[atoi(sub.c_str())].getName();
+    const char *av3 = sub2.c_str();
+    // 복사할 파일을 연다.
+    if ((src = fopen(av1, "r")) == NULL) {
+        fprintf(stderr, "%s: Can't open file.\n", av1);
+        return;
+    }
+    chdir(av2); //디렉토리로 이동
+    // 쓰기할 파일을 연다.
+    if ((dst = fopen(av3, "w")) == NULL) {
+        fprintf(stderr, "%s: Can't open file.\n", "test");
+        return;
+    }
 
+    // 복사
+    while (!feof(src)) {
+        ch = (char)fgetc(src);
+
+        if (ch != EOF) {
+            fputc((int)ch, dst);
+        }
+    }
+    //닫고 원래 경로로 다시 이동
+    fclose(dst);
+    chdir(cwd);
+    fclose(src);
+    
+    //원본 파일 삭제
+    unlink(av1);
+}
 void cd(string str) {
     char cwd[MAX_PATH_LEN];
     char dir[MAX_PATH_LEN];
