@@ -11,11 +11,14 @@ void signalHandler(int signum);
 
 string commands[5];
 
+char past_path[MAX_PATH_LEN + 1]; //최근 경로를 저장
+
 void execute();
 void ls(string str); //디폴트 ls는 현재 디렉토리 출력
 void cd(string str);
 void cp(const char *av1, const char *av2); // av1 경로의 파일을 av2 파일에 복사
-void mv(const char *av1, const char *av2); // av1 경로의 파일을 av2 디렉토리에 복사
+void mv(const char *av1,
+        const char *av2); // av1 경로의 파일을 av2 디렉토리에 복사
 
 int main() {
     execute();
@@ -23,6 +26,7 @@ int main() {
 }
 
 void execute() {
+    ls("."); // 처음에 ls 명령어를 수행
     while (1) {
         string temp;
         cout << "command>> ";
@@ -53,28 +57,32 @@ void execute() {
             cout << "Usage: cd [number]." << endl;
         } else if (commands[0] == "cd" && commands[1] != "") {
             cd(commands[1]);
-
+            ls(".");
         } else if (commands[0] == "cp" && commands[1] != "" &&
                    commands[2] != "") {
             string sub1 = commands[1]; //첫 번째 입력 파일
             string sub2 = commands[2]; //두 번째 입력 파일
-            if (atoi(sub1.c_str()) == 0 && atoi(sub2.c_str()) == 0) { //반환값이 0이면 단순 문자열
+            if (atoi(sub1.c_str()) == 0 &&
+                atoi(sub2.c_str()) == 0) { //반환값이 0이면 단순 문자열
                 const char *av1 = sub1.c_str(); //경로 지정
                 const char *av2 = sub2.c_str();
                 cp(av1, av2);
-            } else if (atoi(sub1.c_str()) != 0 && atoi(sub2.c_str()) != 0) { //반환값이 0이 아니면 정수를 포함한 문자열
-                string sub3 = total[atoi(sub1.c_str())].getName(); //번호에 대한 파일 경로 받아오기
+            } else if (atoi(sub1.c_str()) != 0 &&
+                       atoi(sub2.c_str()) !=
+                           0) { //반환값이 0이 아니면 정수를 포함한 문자열
+                string sub3 = total[atoi(sub1.c_str())]
+                                  .getName(); //번호에 대한 파일 경로 받아오기
                 string sub4 = total[atoi(sub2.c_str())].getName();
                 const char *av1 = sub3.c_str(); //경로 지정
                 const char *av2 = sub4.c_str();
                 cp(av1, av2);
             }
         } else if (commands[0] == "mv" && commands[1] != "" &&
-                   commands[2] != "") {정
+                   commands[2] != "") {
             string sub1 = commands[1];
             string sub2 = commands[2];
             if (atoi(sub1.c_str()) != 0 && atoi(sub2.c_str()) != 0) {
-                string sub3 = total[atoi(sub1.c_str())].getName();기
+                string sub3 = total[atoi(sub1.c_str())].getName();
                 string sub4 = total[atoi(sub2.c_str())].getName();
                 if (total[atoi(sub2.c_str())].getDet() == DIRECTORY) {
                     const char *av1 = sub3.c_str();
@@ -170,6 +178,11 @@ void ls(string str) {
     for (int i = 0; i < total_num; ++i)
         total[i].print();
 
+    if (getcwd(past_path, MAX_PATH_LEN) == NULL) {
+        perror("getcwd() error!");
+        exit(-1);
+    }
+
     if (chdir(current_dir) == -1) {
         perror("chdir() to current directory!");
         exit(-1);
@@ -228,7 +241,8 @@ void mv(const char *av1, const char *av2) {
         perror("getcwd() error!");
         exit(-1);
     }
-    string sub = commands[1]; // 복사된 파일의 이름도 복사한 파일의 이름과 같게 설정
+    string sub =
+        commands[1]; // 복사된 파일의 이름도 복사한 파일의 이름과 같게 설정
     string sub2 = total[atoi(sub.c_str())].getName();
     const char *av3 = sub2.c_str();
     // 복사할 파일을 연다.
@@ -255,44 +269,78 @@ void mv(const char *av1, const char *av2) {
     fclose(dst);
     chdir(cwd);
     fclose(src);
-    
+
     //원본 파일 삭제
     unlink(av1);
 }
 void cd(string str) {
     char cwd[MAX_PATH_LEN];
     char dir[MAX_PATH_LEN];
+
     if (getcwd(cwd, MAX_PATH_LEN) == NULL) {
         perror("getcwd() error!");
         exit(-1);
     }
-    // cout << "Current directory" << cwd << endl; // before cd
-    int num = atoi(str.c_str());
-    for (int i = 0; i < total_num; i++) {
-        if (total[i].getOrder() == num) {
-            string name = total[i].getName();
-            strcpy(dir, name.c_str()); // string to char
+    if (strcmp(past_path, cwd)) //최근경로와 현재 경로가 다르면 최근 경로로 이동
+    {
+        cout << "Recent directory: " << past_path << endl;
+        cout << "go to Recent directory" << endl;
+        chdir(past_path);
+    }
+    if (isdigit(str[0])) //숫자를 입력받았는지 확인
+    {
+        int num = atoi(str.c_str());
+        bool find_flag = false; //숫자를 찾았는지 확인
+        for (int i = 0; i < total_num; i++) {
+            if (total[i].getOrder() == num) {
+                find_flag = true;
+                string name = total[i].getName();
+                strcpy(dir, name.c_str()); // string형을 char형으로 변경
+                struct stat fileInfo2;
+                stat(dir, &fileInfo2);
+                int t = fileType(&fileInfo2);
 
-            struct stat fileInfo2;
-            stat(dir, &fileInfo2);
-            int k = fileType(&fileInfo2);
-
-            if (k == DIRECTORY) {
-                cout << "go to " << dir << endl;
-                if (chdir(dir) == -1) {
-                    perror("chdir() error!");
-                    exit(-1);
+                if (t == DIRECTORY) //예외1 디렉토리가 아니라면
+                {
+                    cout << "go to " << dir << endl;
+                    if (chdir(dir) == -1) {
+                        perror("chdir() error!");
+                        exit(-1);
+                    }
+                    if (getcwd(cwd, MAX_PATH_LEN) == NULL) {
+                        perror("getcwd() error!");
+                        exit(-1);
+                    }
+                    cout << "Current directory : " << cwd
+                         << endl; // cd 이후 현재 경로
+                } else            //예외1 디렉토리가 아닌 경우
+                {
+                    cout << "Error! It is not Directory!" << endl;
                 }
-                if (getcwd(cwd, MAX_PATH_LEN) == NULL) {
-                    perror("getcwd() error!");
-                    exit(-1);
-                }
-                cout << "Current directory : " << cwd << endl; // after cd
-            }
-
-            else {
-                cout << "error! It is not Directory!" << endl;
             }
         }
+        if (find_flag == false) //예외2 숫자를 못찾은 경우
+        {
+            cout << "Error! File number does not exist!" << endl;
+        }
+    } else if (commands[1] == "..") // cd .. 을 예외적으로 허용
+    {
+        cout << "go to .." << endl;
+        if (chdir("..") == -1) {
+            perror("chdir() error!");
+            exit(-1);
+        }
+        if (getcwd(cwd, MAX_PATH_LEN) == NULL) {
+            perror("getcwd() error!");
+            exit(-1);
+        }
+        cout << "Current directory : " << cwd << endl; // cd 이후 현재 경로 출력
+    } else {
+        cout << "Usage: cd [number]." << endl;
+    }
+    if (getcwd(past_path, MAX_PATH_LEN) == NULL) //최근 경로를 저장
+    {
+        perror("getcwd() error!");
+        exit(-1);
     }
 }
