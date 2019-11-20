@@ -1,4 +1,3 @@
-#include <ctype.h>
 #include <dirent.h>
 #include <fcntl.h>
 #include <iostream>
@@ -18,7 +17,7 @@ using namespace std;
 
 #define MAX_PATH_LEN 1024
 #define DIRECTORY 11
-#define FILE 12
+#define FILENUM 12
 
 #ifdef _WIN32
 #include <windows.h>
@@ -73,7 +72,7 @@ class Total { //숫자와 이름 저장하는 클래스
 #else
             cout << "\033[0m";
 #endif
-        } else if (getDet() == FILE) {
+        } else if (getDet() == FILENUM) {
 #ifdef _WIN32
             HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
             SetConsoleTextAttribute(hConsole, ForeColour::Red | 0x0008);
