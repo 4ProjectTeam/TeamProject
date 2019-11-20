@@ -2,7 +2,6 @@
 
 Total *total; //동적할당 하는 인스턴스인데 전역적으로 사용
 int total_num = 0; //디렉토리와 파일 전체 갯수 저장할 변수
-int count = 1;
 
 int fileType(const struct stat *fileInfo); //파일인지 디렉토리인지 알려주는 함수
 // void print_set(set<string> s);
@@ -19,6 +18,7 @@ void cd(string str);
 void cp(const char *av1, const char *av2); // av1 경로의 파일을 av2 파일에 복사
 void mv(const char *av1,
         const char *av2); // av1 경로의 파일을 av2 디렉토리에 복사
+void cat(string str, int decide);
 
 int main() {
     execute();
@@ -90,6 +90,10 @@ void execute() {
                     mv(av1, av2);
                 }
             }
+        } else if (commands[0] == "cat" && commands[1] != ">") {
+            cat(commands[1], 1);
+        } else if (commands[0] == "cat" && commands[1] == ">") {
+            cat(commands[2], 2);
         } else if (commands[0] == "q" || commands[0] == "Q") {
             break;
         }
@@ -343,4 +347,82 @@ void cd(string str) {
         perror("getcwd() error!");
         exit(-1);
     }
+}
+
+void cat(string str, int decide) {
+    int fd = 0;
+    int num = atoi(str.c_str());
+    string name;
+    pid_t pid = 0;
+    int status = 0;
+
+    for (int i = 0; i < total_num; i++) {
+        if (total[i].getOrder() == num) {
+            name = total[i].getName();
+        }
+    }
+
+    const char *pathname = name.c_str();
+
+    char buf[MAX_PATH_LEN + 1] = {
+        '\0',
+    };
+    ssize_t rsize = 0;
+    ssize_t wsize = 0;
+    ssize_t tsize = 0;
+
+    pid = fork();
+    if (pid == -1) {
+        perror("fork() error!(1)");
+        exit(-1);
+    } else if (pid == 0) {
+        if (decide == 1) {
+            fd = open(pathname, O_RDONLY, 0644);
+            if (fd == -1) {
+                perror("open() error!(1)");
+                exit(-1);
+            }
+            do {
+                memset(buf, '\0', MAX_PATH_LEN + 1);
+                rsize = read(fd, buf, MAX_PATH_LEN);
+
+                if (rsize == -1) {
+                    perror("read() error!(1)");
+                    exit(-2);
+                }
+                printf("%s", buf);
+                tsize += rsize;
+            } while (rsize > 0);
+        } else if (decide == 2) {
+
+            fd = open(pathname, O_WRONLY | O_CREAT | O_APPEND, 0644);
+            if (fd == -1) {
+                perror("open() error!(2)");
+                exit(-3);
+            }
+            while (1) {
+                memset(buf, '\0', MAX_PATH_LEN + 1);
+                scanf("%s", buf);
+
+                if (!strcmp(buf, "quit")) {
+                    cin.ignore(4, '\n');
+                    break;
+                }
+
+                int num = strlen(buf);
+                buf[num++] = '\n';
+                wsize = write(fd, buf, num);
+
+                if (wsize == -1) {
+                    perror("write() error!(1)");
+                    exit(-4);
+                }
+            }
+            cout << "Append at " << pathname << endl;
+        }
+    } else {
+        wait(&status);
+    }
+
+    close(fd);
 }
