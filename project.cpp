@@ -25,8 +25,8 @@ int main() {
     return 0;
 }
 
-void execute() {
-    ls("."); // 처음에 ls 명령어를 수행
+void execute() { // 구현 : 염연웅
+    ls(".");     // 처음에 ls 명령어를 수행
     while (1) {
         string temp;
         cout << "command>> ";
@@ -101,7 +101,7 @@ void execute() {
     }
 }
 
-void ls(string str) {
+void ls(string str) { //구현 : 임형준
     char current_dir[MAX_PATH_LEN + 1];
     if (getcwd(current_dir, MAX_PATH_LEN) == NULL) { //현재 디렉토리 임시 저장
         perror("getcwd() error!");
@@ -179,8 +179,11 @@ void ls(string str) {
             ++iter;
         }
     }
-    for (int i = 0; i < total_num; ++i)
+    for (int i = 0; i < total_num; ++i) {
         total[i].print();
+        if (i == total_num - 1 && i % 3 != 2)
+            cout << endl;
+    }
 
     if (getcwd(past_path, MAX_PATH_LEN) == NULL) {
         perror("getcwd() error!");
@@ -192,7 +195,7 @@ void ls(string str) {
         exit(-1);
     }
 }
-void cp(const char *av1, const char *av2) {
+void cp(const char *av1, const char *av2) { //구현 : 김경배
     FILE *src;
     FILE *dst;
     char ch;
@@ -236,7 +239,7 @@ void signalHandler(int signum) {
         exit(0);
     }
 }
-void mv(const char *av1, const char *av2) {
+void mv(const char *av1, const char *av2) { //구현 : 김경배
     FILE *src;
     FILE *dst;
     char ch;
@@ -277,7 +280,7 @@ void mv(const char *av1, const char *av2) {
     //원본 파일 삭제
     unlink(av1);
 }
-void cd(string str) {
+void cd(string str) { //구현 : 이승현
     char cwd[MAX_PATH_LEN];
     char dir[MAX_PATH_LEN];
 
@@ -349,7 +352,7 @@ void cd(string str) {
     }
 }
 
-void cat(string str, int decide) {
+void cat(string str, int decide) { //구현 : 임형준
     int fd = 0;
     int num = atoi(str.c_str());
     string name;
@@ -364,7 +367,7 @@ void cat(string str, int decide) {
 
     const char *pathname = name.c_str();
 
-    char buf[MAX_PATH_LEN + 1] = {
+    char buf[MAX_PATH_LEN] = {
         '\0',
     };
     ssize_t rsize = 0;
@@ -401,11 +404,30 @@ void cat(string str, int decide) {
                 exit(-3);
             }
             while (1) {
-                memset(buf, '\0', MAX_PATH_LEN + 1);
-                scanf("%s", buf);
+                memset(buf, '\0', MAX_PATH_LEN);
 
-                if (!strcmp(buf, "quit")) {
-                    cin.ignore(4, '\n');
+                /*cin.getline(buf, MAX_PATH_LEN);
+
+                fflush(stdin);
+                for (int i = 0; i < MAX_PATH_LEN; i++) {
+                    if (buf[i] == 13)
+                        buf[i] = 0;
+                }*/
+
+                // scanf("%s", buf);
+
+                string a;
+                getline(cin, a);
+
+                for (int i = 0; i <= a.length(); ++i) {
+                    if (i == a.length()) {
+                        buf[i] = '\0';
+                        break;
+                    }
+                    buf[i] = a[i];
+                }
+
+                if (strcmp(buf, "quit") == 0) {
                     break;
                 }
 

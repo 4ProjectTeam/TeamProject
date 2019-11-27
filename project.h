@@ -67,7 +67,18 @@ class Total { //숫자와 이름 저장하는 클래스
             oss << "\033[1;" << ForeColour::Blue << "m";
             cout << oss.str();
 #endif
-            cout << order << " " << name << endl;
+            // cout << order << " " << name << endl;
+
+            printf("%d ", order);
+            if (order >= 10) {
+                printf("%-47s", name.c_str());
+            } else {
+                printf("%-48s", name.c_str());
+            }
+
+            if (order % 3 == 2)
+                cout << endl;
+
 #ifdef _WIN32
             SetConsoleTextAttribute(hConsole, 0x0008);
 #else
@@ -82,7 +93,16 @@ class Total { //숫자와 이름 저장하는 클래스
             oss << "\033[1;" << ForeColour::Red << "m";
             cout << oss.str();
 #endif
-            cout << order << " " << name << endl;
+            // cout << order << " " << name << endl;
+            printf("%d ", order);
+            if (order >= 10) {
+                printf("%-47s", name.c_str());
+            } else {
+                printf("%-48s", name.c_str());
+            }
+
+            if (order % 3 == 2)
+                cout << endl;
 #ifdef _WIN32
             SetConsoleTextAttribute(hConsole, 0x0008);
 #else
