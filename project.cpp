@@ -112,6 +112,7 @@ void ls(string str) { //구현 : 임형준
     struct passwd *userInfo;
     char cwd[MAX_PATH_LEN + 1];
     char path[MAX_PATH_LEN + 1];
+    int temp_num = 0;
 
     DIR *dirp;
     struct dirent *dirInfo;
@@ -158,13 +159,13 @@ void ls(string str) { //구현 : 임형준
         } else if (k == FILENUM) {
             temp_file.insert(name);
         }
-        ++total_num; //디렉토리, 파일 전체 몇 개인지 세는 변수
+        ++temp_num; //디렉토리, 파일 전체 몇 개인지 세는 변수
     }
 
     int dir_num = temp_dir.size();
     set<string>::iterator iter;
     iter = temp_dir.begin();
-    total = new Total[total_num];
+    total = new Total[temp_num];
 
     for (int i = 0; i < dir_num; ++i) {
         if (iter != temp_dir.end()) {
@@ -173,15 +174,15 @@ void ls(string str) { //구현 : 임형준
         }
     }
     iter = temp_file.begin();
-    for (int i = dir_num; i < total_num; ++i) {
+    for (int i = dir_num; i < temp_num; ++i) {
         if (iter != temp_file.end()) {
             total[i].insert(i, *iter, FILENUM);
             ++iter;
         }
     }
-    for (int i = 0; i < total_num; ++i) {
+    for (int i = 0; i < temp_num; ++i) {
         total[i].print();
-        if (i == total_num - 1 && i % 3 != 2)
+        if ((i % 3 != 2) && (i == (temp_num - 1)))
             cout << endl;
     }
 
@@ -194,6 +195,7 @@ void ls(string str) { //구현 : 임형준
         perror("chdir() to current directory!");
         exit(-1);
     }
+    total_num = temp_num;
 }
 void cp(const char *av1, const char *av2) { //구현 : 김경배
     FILE *src;
@@ -406,24 +408,12 @@ void cat(string str, int decide) { //구현 : 임형준
             while (1) {
                 memset(buf, '\0', MAX_PATH_LEN);
 
-                /*cin.getline(buf, MAX_PATH_LEN);
-
-                fflush(stdin);
-                for (int i = 0; i < MAX_PATH_LEN; i++) {
-                    if (buf[i] == 13)
-                        buf[i] = 0;
-                }*/
-
-                // scanf("%s", buf);
-
                 string a;
                 getline(cin, a);
 
                 for (int i = 0; i <= a.length(); ++i) {
-                    if (i == a.length()) {
-                        buf[i] = '\0';
+                    if (buf[i] == '\n')
                         break;
-                    }
                     buf[i] = a[i];
                 }
 
