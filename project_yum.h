@@ -22,7 +22,7 @@ using namespace std;
 
 #define MAX_PATH_LEN 1024
 #define DIRECTORY 11
-#define FILENUM 12
+#define FILE 12
 
 #ifdef _WIN32
 #include <windows.h>
@@ -71,22 +71,13 @@ class Total { //숫자와 이름 저장하는 클래스
             oss << "\033[1;" << ForeColour::Blue << "m";
             cout << oss.str();
 #endif
-            if (order >= 10 && (order % 3 != 2)) {
-                printf("%d %-47s", order, name.c_str());
-            } else if (order < 10 && (order % 3 != 2)) {
-                printf("%d %-48s", order, name.c_str());
-            } else if (order >= 10 && (order % 3 == 2)) {
-                printf("%d %-48s\n", order, name.c_str());
-            } else if (order < 10 && (order % 3 == 2)) {
-                printf("%d %-48s\n", order, name.c_str());
-            }
-
+            cout << order << " " << name << endl;
 #ifdef _WIN32
             SetConsoleTextAttribute(hConsole, 0x0008);
 #else
             cout << "\033[0m";
 #endif
-        } else if (getDet() == FILENUM) {
+        } else if (getDet() == FILE) {
 #ifdef _WIN32
             HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
             SetConsoleTextAttribute(hConsole, ForeColour::Red | 0x0008);
@@ -95,15 +86,7 @@ class Total { //숫자와 이름 저장하는 클래스
             oss << "\033[1;" << ForeColour::Red << "m";
             cout << oss.str();
 #endif
-            if (order >= 10 && (order % 3 != 2)) {
-                printf("%d %-47s", order, name.c_str());
-            } else if (order < 10 && (order % 3 != 2)) {
-                printf("%d %-48s", order, name.c_str());
-            } else if (order >= 10 && (order % 3 == 2)) {
-                printf("%d %-48s\n", order, name.c_str());
-            } else if (order < 10 && (order % 3 == 2)) {
-                printf("%d %-48s\n", order, name.c_str());
-            }
+            cout << order << " " << name << endl;
 #ifdef _WIN32
             SetConsoleTextAttribute(hConsole, 0x0008);
 #else
