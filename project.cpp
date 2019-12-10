@@ -231,7 +231,7 @@ void cp(const char *av1, const char *av2) { //구현 : 김경배
     fclose(dst);
 }
 //파일인지 디렉토리인지 구분하는 함수
-int fileType(const struct stat *fileInfo) {
+int fileType(const struct stat *fileInfo) { //구현 : 
     if (S_ISDIR(fileInfo->st_mode)) { //디렉토리이면 DIRECTORY 리턴
         return DIRECTORY;
     } else { //아닐 경우 FILE 리턴
@@ -239,7 +239,7 @@ int fileType(const struct stat *fileInfo) {
     }
 }
 
-void signalHandler(int signum) {
+void signalHandler(int signum) { //구현 : 임형준
     if (signum == SIGINT) {
         delete[] total;
         exit(0);
@@ -444,7 +444,7 @@ void cat(string str, int decide) { //구현 : 임형준
 }
 
 // tr
-int tcp_connect(int af, char *servip, unsigned short port) {
+int tcp_connect(int af, char *servip, unsigned short port) { //구현 : 염연웅
     struct sockaddr_in servaddr;
     int s;
     // 소켓 생성
@@ -462,7 +462,7 @@ int tcp_connect(int af, char *servip, unsigned short port) {
     return s;
 }
 
-void tr_client() {
+void tr_client() { //구현 : 염연웅
     struct sockaddr_in server;
     struct stat obj;
     int sock;
